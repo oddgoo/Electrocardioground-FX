@@ -24,6 +24,8 @@ String death_message = "";
 char colorA = 0;
 char colorB = 1;
 
+byte crashTolerance = 2;
+
 // columns
 class Column
 {
@@ -39,6 +41,27 @@ public:
   {
     return (float)life / max_column_life * max_column_height;
   }
+
+  void updateState(bool buttonPressed, int depletionSpeed, int maxLife, bool (*checkSquash)(int, int)) {
+    if (buttonPressed) {
+      this->state = true;
+      if (this->life > 0) {
+        this->life -= depletionSpeed;
+      }
+    } else {
+      if (this->state == true) {
+        this->state = false;
+        if (checkSquash(this->x, this->h)) {
+          // arduboy.tunes.tone(880, 50);
+        } else {
+          // arduboy.tunes.tone(220, 50);
+        }
+      }
+      if (this->life < maxLife) {
+        this->life += recovery_speed;
+      }
+    }
+  }
   
 };
 
@@ -53,7 +76,7 @@ public:
   int h; // Half (TOP or BOTTOM)
   int d; // Direction (1 for right, -1 for left)
   bool collidesWith(Column &column) {
-    if (this->x >= column.x-column_width+1 && this->x < column.x + column_width-1) {
+    if (this->x >= column.x-column_width+crashTolerance && this->x < column.x + column_width-crashTolerance) {
       if (this->h == column.h && !column.state) {
         return true;
       }
@@ -152,65 +175,11 @@ void processColumns()
 
 void updateColumns()
 {
-  if (arduboy.pressed(A_BUTTON) || arduboy.pressed(DOWN_BUTTON))
-  {
-    if (columns[0].state == false){
-      // arduboy.tunes.tone(440, 50);
-    }
-    columns[0].state = true;
-    if (gamestate == GAME && columns[0].life > 0){
-      columns[0].life -= depletion_speed;
-    }
-  }
-  else
-  {
-    if (columns[0].state == true)
-    {
-      columns[0].state = false;
-      if (checkSquash(columns[0].x, columns[0].h)){
-        // arduboy.tunes.tone(880, 50);
-      }
-      else{
-        // arduboy.tunes.tone(220, 50);
-      }
-    }
-    if (columns[0].life < max_column_life)
-    {
-      columns[0].life += recovery_speed;
-    }
-  }
+  bool buttonPressedA = arduboy.pressed(A_BUTTON) || arduboy.pressed(DOWN_BUTTON);
+  columns[0].updateState(buttonPressedA, depletion_speed, max_column_life, checkSquash);
 
-  if (arduboy.pressed(B_BUTTON) || arduboy.pressed(UP_BUTTON))
-  {
-    if (columns[1].state == false)
-    {
-      // Play sound effect for column extension
-      // arduboy.tunes.tone(440, 50);
-    }
-    columns[1].state = true;
-    if (gamestate == GAME && columns[1].life > 0)
-    {
-      columns[1].life -= depletion_speed;
-    }
-  }
-  else
-  {
-    if (columns[1].state == true)
-    {
-      columns[1].state = false;
-      if (checkSquash(columns[1].x, columns[1].h)){
-        // arduboy.tunes.tone(880, 50);
-      }
-      else{
-        // arduboy.tunes.tone(220, 50);
-      }
-      
-    }
-    if (columns[1].life < max_column_life)
-    {
-      columns[1].life += recovery_speed;
-    }
-  }
+  bool buttonPressedB = arduboy.pressed(B_BUTTON) || arduboy.pressed(UP_BUTTON);
+  columns[1].updateState(buttonPressedB, depletion_speed, max_column_life, checkSquash);
 
   if(gamestate == GAME)
     if (columns[0].life <= 0 || columns[1].life <= 0 )
