@@ -23,7 +23,7 @@ const float recovery_speed = 2;
 const int MAX_BEATS = 100; // Maximum number of beats
 
 String death_message = "";
-byte gameMode = GENTLE;
+byte gameMode = MAYHEM;
 
 char colorA = 0;
 char colorB = 1;
@@ -262,6 +262,9 @@ void updateBeats() {
         beats[numBeats] = Beat(x, h, d);
         numBeats++;
       }
+
+      if (t%(column_width*beatGap*4) == 0) //extra mayhem
+        switchColors();
     }
   } else if (gameMode == GENTLE) {
     if (t % (column_width * beatGap) == 0) {
