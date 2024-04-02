@@ -9,6 +9,9 @@ byte gamestate = TITLE;
 #define TOP 1
 #define BOTTOM -1
 
+#define GENTLE 0
+#define MAYHEM 1
+
 Arduboy2 arduboy;
 
 const int column_width = 6;
@@ -20,11 +23,19 @@ const float recovery_speed = 2;
 const int MAX_BEATS = 100; // Maximum number of beats
 
 String death_message = "";
+byte gameMode = GENTLE;
 
 char colorA = 0;
 char colorB = 1;
 
 byte crashTolerance = 2;
+
+byte beatGap = 0;
+byte initialBeatGap = 4;
+
+char gentleCourse[]       = {1,1,1,0,-1,1, 1,1,0,-1,-1};
+char gentleCourseDir[]    = {1,1,1,1, 1,1,-1,1,0,-1,-1};
+int gentleCourseIndex = 0;
 
 // columns
 class Column
@@ -98,6 +109,8 @@ byte t = 0;
 
 void initialiseGlobals()
 {
+  gentleCourseIndex = 0;
+  beatGap = initialBeatGap;
   score = 0;
   t = 0;
   columns[0] = Column((WIDTH / 2) - column_width*2, TOP);
@@ -142,8 +155,12 @@ void loop()
 
 void title_screen()
 {
-  arduboy.setCursor(50, 0);
-  arduboy.print(F("Electrocardioground!"));
+  drawStage();
+  arduboy.setCursor(7, 5);
+  arduboy.setTextColor(colorB);
+  arduboy.print(F("ELECTROCARDIOGROUND"));
+  arduboy.setCursor(57, 15);
+  arduboy.print(F("fx"));
 
   if (arduboy.justPressed(A_BUTTON) || arduboy.justPressed(DOWN_BUTTON) ||
       arduboy.justPressed(B_BUTTON) || arduboy.justPressed(UP_BUTTON))
@@ -159,6 +176,9 @@ void game()
   processColumns();
   updateBeats();
   drawBeats();
+  if(t%6==0) score++;
+  arduboy.setTextColor(colorB);
+  arduboy.print(score);
 }
 
 void drawStage()
@@ -184,7 +204,7 @@ void updateColumns()
   if(gamestate == GAME)
     if (columns[0].life <= 0 || columns[1].life <= 0 )
     {
-      death_message = "empty!";
+      death_message = "Empty!";
       lose();
     }
 }
@@ -205,13 +225,19 @@ bool checkSquash(byte cx, int h)
 
 void lose()
 {
+  switchColors();
   // Clear the beats array
   for (int i = 0; i < MAX_BEATS; i++) {
     beats[i] = Beat();
   }
   numBeats = 0;
-
   gamestate = DEATH;
+}
+
+void switchColors(){
+  char tempColor = colorA;
+  colorA = colorB;
+  colorB = tempColor;
 }
 
 void drawColumns()
@@ -222,15 +248,36 @@ void drawColumns()
 
 void updateBeats() {
   // Generate new beats
-  if (t%(column_width*2) == 0 && random(100) < 25) { // Adjust the probability of generating new beats
-    byte r = random(2);
+  
+  if(gameMode == MAYHEM) {
 
-    int h = r == 0 ? TOP : BOTTOM; // Random half
-    int d = h == TOP ? 1 : -1; 
-    int x = h == TOP ? 0 : WIDTH - 1; // Starting x-coordinate based on the direction
-    if (numBeats < MAX_BEATS) {
-      beats[numBeats] = Beat(x, h, d);
-      numBeats++;
+    //beatGap = initialBeatGap - (score / 1000);
+ 
+    if (t%(column_width*beatGap) == 0) { // Adjust the probability of generating new beats
+
+      int h = random(2) == 0 ? TOP : BOTTOM; // Random half
+      int d = random(2) == 0 ? 1 : -1; 
+      int x = d == 1 ? 0 : WIDTH - 1; // Starting x-coordinate based on the direction
+      if (numBeats < MAX_BEATS) {
+        beats[numBeats] = Beat(x, h, d);
+        numBeats++;
+      }
+    }
+  } else if (gameMode == GENTLE) {
+    if (t % (column_width * beatGap) == 0) {
+      if (gentleCourse[gentleCourseIndex] != 0) {
+        int h = gentleCourse[gentleCourseIndex] == 1 ? TOP : BOTTOM; // Top or bottom based on gentleCourse
+        int d = gentleCourseDir[gentleCourseIndex]; // Direction based on gentleCourseDir
+        int x = d == 1 ? 0 : WIDTH - 1; // Starting x-coordinate based on the direction
+        if (numBeats < MAX_BEATS) {
+          beats[numBeats] = Beat(x, h, d);
+          numBeats++;
+        }
+      }
+      gentleCourseIndex++;
+      if (gentleCourseIndex >= sizeof(gentleCourse) / sizeof(gentleCourse[0])) {
+        gentleCourseIndex = 0; // Reset the index if we've reached the end of the array
+      }
     }
   }
 
@@ -267,10 +314,20 @@ void drawBeats()
   }
 }
 
+void showMessage(String msg){
+  arduboy.setCursor(48, 15);
+  arduboy.setTextColor(colorB);
+  arduboy.print(msg);
+
+  arduboy.setCursor(48, 45);
+  arduboy.setTextColor(colorA);
+  arduboy.print(msg);
+}
+
 void lose_screen()
 {
-  arduboy.setCursor(50, 0);
-  arduboy.print(death_message);
+  drawStage();
+  showMessage(death_message);
 
   if (arduboy.justPressed(A_BUTTON) || arduboy.justPressed(DOWN_BUTTON) ||
       arduboy.justPressed(B_BUTTON) || arduboy.justPressed(UP_BUTTON))
