@@ -4,6 +4,7 @@
 #define TITLE 0
 #define GAME 1
 #define DEATH 2
+#define COMPLETE 3
 byte gamestate = TITLE;
 
 #define TOP 1
@@ -23,7 +24,7 @@ const float recovery_speed = 2;
 const int MAX_BEATS = 100; // Maximum number of beats
 
 String death_message = "";
-byte gameMode = MAYHEM;
+byte gameMode = GENTLE;
 
 char colorA = 0;
 char colorB = 1;
@@ -148,9 +149,15 @@ void loop()
   case DEATH:
     lose_screen();
     break;
+
+  case COMPLETE:
+    win_screen();
+    break;
+
   }
   t++;
   arduboy.display();
+
 }
 
 void title_screen()
@@ -234,6 +241,14 @@ void lose()
   gamestate = DEATH;
 }
 
+void win(){
+    for (int i = 0; i < MAX_BEATS; i++) {
+    beats[i] = Beat();
+  }
+  numBeats = 0;
+  gamestate = COMPLETE;
+}
+
 void switchColors(){
   char tempColor = colorA;
   colorA = colorB;
@@ -267,7 +282,7 @@ void updateBeats() {
         switchColors();
     }
   } else if (gameMode == GENTLE) {
-    if (t % (column_width * beatGap) == 0) {
+    if (t % (column_width * beatGap) == 0 && gentleCourseIndex < sizeof(gentleCourse)){
       if (gentleCourse[gentleCourseIndex] != 0) {
         int h = gentleCourse[gentleCourseIndex] == 1 ? TOP : BOTTOM; // Top or bottom based on gentleCourse
         int d = gentleCourseDir[gentleCourseIndex]; // Direction based on gentleCourseDir
@@ -278,9 +293,11 @@ void updateBeats() {
         }
       }
       gentleCourseIndex++;
-      if (gentleCourseIndex >= sizeof(gentleCourse) / sizeof(gentleCourse[0])) {
-        gentleCourseIndex = 0; // Reset the index if we've reached the end of the array
-      }
+
+    }
+        // Check if we've reached the end of the gentleCourse array
+    if (score >= 100) {
+      win();
     }
   }
 
@@ -323,6 +340,18 @@ void showMessage(String msg){
   arduboy.print(msg);
 
   arduboy.setCursor(48, 45);
+  arduboy.setTextColor(colorA);
+  arduboy.print(msg);
+}
+
+void win_screen(){
+  drawStage();
+  String msg = "Gentle Course Win!";
+  arduboy.setCursor(11, 15);
+  arduboy.setTextColor(colorB);
+  arduboy.print(msg);
+
+  arduboy.setCursor(11, 45);
   arduboy.setTextColor(colorA);
   arduboy.print(msg);
 }
