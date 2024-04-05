@@ -1,5 +1,5 @@
 #include <Arduboy2.h>
-
+#include <EEPROM.h>
 // navigation state
 #define TITLE 0
 #define GAME 1
@@ -37,6 +37,8 @@ byte initialBeatGap = 4;
 char gentleCourse[]       = {1,1,1,0,-1,1, 1,1,0,-1,-1};
 char gentleCourseDir[]    = {1,1,1,1, 1,1,-1,1,0,-1,-1};
 int gentleCourseIndex = 0;
+
+const int EEPROM_HIGH_SCORE_ADDRESS = 0;
 
 // columns
 class Column
@@ -104,9 +106,11 @@ Column columns[2];
 
 // game vars
 int score = 0;
-int hi_score = 0;
 int speed = 0;
 byte t = 0;
+
+int gentleHighScore = 0;
+int mayhemHighScore = 0;
 
 void initialiseGlobals()
 {
@@ -120,6 +124,9 @@ void initialiseGlobals()
 
 void setup()
 {
+  // EEPROM.get(EEPROM_HIGH_SCORE_ADDRESS, gentleHighScore); Not doing high-score saving right now as there are possible EEPROM collisions to manage
+  // EEPROM.get(EEPROM_HIGH_SCORE_ADDRESS + sizeof(int), mayhemHighScore);
+
   initialiseGlobals();
   arduboy.begin();
   arduboy.setFrameRate(60);
@@ -175,6 +182,15 @@ void title_screen()
     initialiseGlobals();
     gamestate = GAME;
   }
+
+  // high scores
+  // arduboy.setTextColor(colorA);
+  // arduboy.setCursor(37, 45);
+  // arduboy.print(gentleHighScore);
+
+  // arduboy.setTextColor(colorA);
+  // arduboy.setCursor(80, 45);
+  // arduboy.print(mayhemHighScore);
 }
 
 void game()
@@ -184,6 +200,7 @@ void game()
   updateBeats();
   drawBeats();
   if(t%6==0) score++;
+  arduboy.setCursor(0, 0);
   arduboy.setTextColor(colorB);
   arduboy.print(score);
 }
@@ -247,6 +264,22 @@ void win(){
   }
   numBeats = 0;
   gamestate = COMPLETE;
+}
+
+void updateScore() {
+  // Existing updateScore() function logic...
+
+  // Update the high score if the current score is higher
+  // if (gameMode == GENTLE && score > gentleHighScore) {
+  //   gentleHighScore = score;
+  //   EEPROM.put(EEPROM_HIGH_SCORE_ADDRESS, gentleHighScore); // Save the high score to the EEPROM
+  // }
+  // else if (gameMode == MAYHEM && score > mayhemHighScore) {
+  //   mayhemHighScore = score;
+  //   EEPROM.put(EEPROM_HIGH_SCORE_ADDRESS + sizeof(int), mayhemHighScore); // Save the high score to the EEPROM
+  // }
+
+  
 }
 
 void switchColors(){
@@ -334,12 +367,12 @@ void drawBeats()
   }
 }
 
-void showMessage(String msg){
-  arduboy.setCursor(48, 15);
+void showMessage(String msg, int xPos, int yPos){
+  arduboy.setCursor(48, yPos);
   arduboy.setTextColor(colorB);
   arduboy.print(msg);
 
-  arduboy.setCursor(48, 45);
+  arduboy.setCursor(48, yPos+30);
   arduboy.setTextColor(colorA);
   arduboy.print(msg);
 }
@@ -354,16 +387,28 @@ void win_screen(){
   arduboy.setCursor(11, 45);
   arduboy.setTextColor(colorA);
   arduboy.print(msg);
+
+  if (arduboy.justPressed(A_BUTTON) || arduboy.justPressed(DOWN_BUTTON) ||
+    arduboy.justPressed(B_BUTTON) || arduboy.justPressed(UP_BUTTON))
+  {
+    gamestate = TITLE;
+  }
 }
 
 void lose_screen()
 {
   drawStage();
-  showMessage(death_message);
+  showMessage(death_message, 52, 10);
+
+  arduboy.setCursor(0, 0);
+  arduboy.setTextColor(colorB);
+  arduboy.print(score);
+
 
   if (arduboy.justPressed(A_BUTTON) || arduboy.justPressed(DOWN_BUTTON) ||
       arduboy.justPressed(B_BUTTON) || arduboy.justPressed(UP_BUTTON))
   {
     gamestate = TITLE;
   }
+
 }
