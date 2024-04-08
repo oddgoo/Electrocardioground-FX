@@ -21,24 +21,27 @@ const int max_column_height = 32 - column_width;
 const float depletion_speed = 4;
 const float recovery_speed = 2;
 
-const int MAX_BEATS = 100; // Maximum number of beats
+const int MAX_BEATS = 200; // Maximum number of beats
+const int GENTLE_TARGET_SCORE = 200; // Maximum number of beats
 
 String death_message = "";
 byte gameMode = GENTLE;
 
+int titleOption = 0;
 char colorA = 0;
 char colorB = 1;
 
 byte crashTolerance = 2;
 
 byte beatGap = 0;
-byte initialBeatGap = 4;
+byte gentleBeatGap = 6;
+byte initialBeatGap = 5;
 
-char gentleCourse[]       = {1,1,1,0,-1,1, 1,1,0,-1,-1};
-char gentleCourseDir[]    = {1,1,1,1, 1,1,-1,1,0,-1,-1};
+char gentleCourse[]       = {1,0,1,1,0,0,-1,1,0, 1,1,0,0,-1,-1, 1,1,0, 1,0,1, 1,0,-1, 1,0,1,-1,1,-1};
+char gentleCourseDir[]    = {1,0,1,1,1,0, 1,1,0,-1,1,0,0,-1,-1, 1,1,0,-1,0,1,-1,0,-1,-1,0,1, 1,1, 1};
 int gentleCourseIndex = 0;
 
-const int EEPROM_HIGH_SCORE_ADDRESS = 0;
+//const int EEPROM_HIGH_SCORE_ADDRESS = 0;
 
 // columns
 class Column
@@ -112,6 +115,8 @@ byte t = 0;
 int gentleHighScore = 0;
 int mayhemHighScore = 0;
 
+
+
 void initialiseGlobals()
 {
   gentleCourseIndex = 0;
@@ -170,18 +175,56 @@ void loop()
 void title_screen()
 {
   drawStage();
-  arduboy.setCursor(7, 5);
-  arduboy.setTextColor(colorB);
-  arduboy.print(F("ELECTROCARDIOGROUND"));
-  arduboy.setCursor(57, 15);
-  arduboy.print(F("fx"));
+
+  int maxOptions = 3;
+
+
+  //Choose Mode
+  if(arduboy.justPressed(RIGHT_BUTTON)){
+    titleOption++;
+    if(titleOption> maxOptions-1)
+      titleOption = 0;
+  }
+    //Choose Mode
+  if(arduboy.justPressed(LEFT_BUTTON)){
+    titleOption--;
+    if(titleOption<0)
+      titleOption = 2;
+  }
+
+  if(titleOption == 0){
+    gameMode = GENTLE;
+    arduboy.setCursor(23,44);
+    arduboy.setTextColor(colorA);
+    arduboy.print("<   Gentle   >");
+
+  } else if(titleOption == 1){
+    gameMode = MAYHEM;
+    arduboy.setCursor(23,44);
+    arduboy.setTextColor(colorA);
+    arduboy.print("<   MAYHEM   >");
+  } else if(titleOption == 2){
+    arduboy.setCursor(7, 8);
+    arduboy.setTextColor(colorB);
+    arduboy.print(F("Instructions"));
+  }
+
+  if(titleOption!=2){ //show title if not on instructions
+    arduboy.setCursor(7, 8);
+    arduboy.setTextColor(colorB);
+    arduboy.print(F("ELECTROCARDIOGROUND"));
+    arduboy.setCursor(57, 18);
+    arduboy.print(F("fx"));
+  }
+
 
   if (arduboy.justPressed(A_BUTTON) || arduboy.justPressed(DOWN_BUTTON) ||
       arduboy.justPressed(B_BUTTON) || arduboy.justPressed(UP_BUTTON))
-  {
-    initialiseGlobals();
-    gamestate = GAME;
-  }
+      if (titleOption!=2)
+        {
+          initialiseGlobals();
+          gamestate = GAME;
+        }
 
   // high scores
   // arduboy.setTextColor(colorA);
@@ -299,7 +342,8 @@ void updateBeats() {
   
   if(gameMode == MAYHEM) {
 
-    //beatGap = initialBeatGap - (score / 1000);
+    beatGap = initialBeatGap - (score / 40);
+    if (beatGap < 3) beatGap = 3;
  
     if (t%(column_width*beatGap) == 0) { // Adjust the probability of generating new beats
 
@@ -315,7 +359,7 @@ void updateBeats() {
         switchColors();
     }
   } else if (gameMode == GENTLE) {
-    if (t % (column_width * beatGap) == 0 && gentleCourseIndex < sizeof(gentleCourse)){
+    if (t % (column_width * gentleBeatGap) == 0 && gentleCourseIndex < sizeof(gentleCourse)){
       if (gentleCourse[gentleCourseIndex] != 0) {
         int h = gentleCourse[gentleCourseIndex] == 1 ? TOP : BOTTOM; // Top or bottom based on gentleCourse
         int d = gentleCourseDir[gentleCourseIndex]; // Direction based on gentleCourseDir
@@ -329,7 +373,7 @@ void updateBeats() {
 
     }
         // Check if we've reached the end of the gentleCourse array
-    if (score >= 100) {
+    if (score >= GENTLE_TARGET_SCORE) {
       win();
     }
   }
@@ -372,7 +416,7 @@ void showMessage(String msg, int xPos, int yPos){
   arduboy.setTextColor(colorB);
   arduboy.print(msg);
 
-  arduboy.setCursor(48, yPos+30);
+  arduboy.setCursor(48, yPos+33);
   arduboy.setTextColor(colorA);
   arduboy.print(msg);
 }
@@ -398,7 +442,7 @@ void win_screen(){
 void lose_screen()
 {
   drawStage();
-  showMessage(death_message, 52, 10);
+  showMessage(death_message, 52, 11);
 
   arduboy.setCursor(0, 0);
   arduboy.setTextColor(colorB);
