@@ -1,6 +1,9 @@
 #include <Arduboy2.h>
-#include <EEPROM.h>
+#include <ArduboyTones.h>
+// #include <EEPROM.h>
 // navigation state
+
+
 #define TITLE 0
 #define GAME 1
 #define DEATH 2
@@ -14,6 +17,7 @@ byte gamestate = TITLE;
 #define MAYHEM 1
 
 Arduboy2 arduboy;
+ArduboyTones sound(arduboy.audio.enabled);
 
 const int column_width = 6;
 const int max_column_life = 127;
@@ -24,7 +28,7 @@ const float recovery_speed = 2;
 const int MAX_BEATS = 200; // Maximum number of beats
 const int GENTLE_TARGET_SCORE = 200; // Maximum number of beats
 
-String death_message = "Lose!";
+int death_mode = 0; //0=crash, 1=depletion
 
 byte gameMode = GENTLE;
 
@@ -108,6 +112,11 @@ public:
 
   void updateState(bool buttonPressed, int depletionSpeed, int maxLife, bool (*checkSquash)(int, int)) {
     if (buttonPressed) {
+
+      if(this->state == false){
+         sound.tone(800, 50);
+      }
+
       this->state = true;
       if (this->life > 0) {
         this->life -= depletionSpeed;
@@ -115,10 +124,11 @@ public:
     } else {
       if (this->state == true) {
         this->state = false;
+     
         if (checkSquash(this->x, this->h)) {
-          // arduboy.tunes.tone(880, 50);
+            sound.tone(150, 80, 200, 80);
         } else {
-          // arduboy.tunes.tone(220, 50);
+            sound.tone(200, 50);
         }
       }
       if (this->life < maxLife) {
@@ -308,9 +318,10 @@ void updateColumns()
   if(gamestate == GAME)
     if (columns[0].life <= 0 || columns[1].life <= 0 )
     {
-      death_message = "Empty!";
+      death_mode = 1;
       lose();
     }
+
 }
 
 bool checkSquash(byte cx, int h)
@@ -329,6 +340,7 @@ bool checkSquash(byte cx, int h)
 
 void lose()
 {
+  sound.tone(110, 70, 120, 60, 80, 100);
   switchColors();
   // Clear the beats array
   for (int i = 0; i < MAX_BEATS; i++) {
@@ -431,7 +443,7 @@ void updateBeats() {
     for (int j = 0; j < 2; j++) { // Assuming there are 2 columns
       if (beats[i].collidesWith(columns[j])) {
         // End the game
-        death_message = "Crash!";
+        death_mode = 0;
         lose();
         return;
       }
@@ -471,11 +483,17 @@ void lose_screen()
   drawStage();
   arduboy.setCursor(48, 11);
   arduboy.setTextColor(colorB);
-  arduboy.print(death_message);
+  if(death_mode == 0)
+    arduboy.print("Crash!");
+  else
+    arduboy.print("Empty!");
 
   arduboy.setCursor(48, 11+33);
   arduboy.setTextColor(colorA);
-  arduboy.print(death_message);
+  if(death_mode == 0)
+    arduboy.print("Crash!");
+  else
+    arduboy.print("Empty!");
 
   arduboy.setCursor(0, 0);
   arduboy.setTextColor(colorB);
