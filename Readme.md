@@ -7,7 +7,6 @@
 
 ## Building Instructions
 
-
 This code is designed to be compiled for Arduboy, a miniature game system based on Arduino.
 
  - Arduboy Getting Started Guide: https://community.arduboy.com/t/arduboy-getting-started-guide/279
@@ -15,9 +14,12 @@ This code is designed to be compiled for Arduboy, a miniature game system based 
 
 The built hex file can also be run using "Ardens", an arduboy emulator.
 
-
 ## TODO:
-- Finish Gentle Course
-- Add menu state
-- Tune Mayhem course
+✅ Core gameplay loop
+✅ Color Switching
+✅ Gentle and Mayhem mode separation
+✅ Finish Gentle Course
+✅ Add menu state
+✅ Tune Mayhem course
+✅ Nicer Title and Instructions screens
 - Beeps and Boops
