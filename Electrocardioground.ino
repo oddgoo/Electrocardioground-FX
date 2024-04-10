@@ -24,7 +24,8 @@ const float recovery_speed = 2;
 const int MAX_BEATS = 200; // Maximum number of beats
 const int GENTLE_TARGET_SCORE = 200; // Maximum number of beats
 
-String death_message = "";
+String death_message = "Lose!";
+
 byte gameMode = GENTLE;
 
 int titleOption = 0;
@@ -110,12 +111,10 @@ Column columns[2];
 // game vars
 int score = 0;
 int speed = 0;
-byte t = 0;
+word t = 0;
 
 int gentleHighScore = 0;
 int mayhemHighScore = 0;
-
-
 
 void initialiseGlobals()
 {
@@ -167,7 +166,6 @@ void loop()
     break;
 
   }
-  t++;
   arduboy.display();
 
 }
@@ -246,6 +244,7 @@ void game()
   arduboy.setCursor(0, 0);
   arduboy.setTextColor(colorB);
   arduboy.print(score);
+  t++;
 }
 
 void drawStage()
@@ -411,26 +410,16 @@ void drawBeats()
   }
 }
 
-void showMessage(String msg, int xPos, int yPos){
-  arduboy.setCursor(48, yPos);
-  arduboy.setTextColor(colorB);
-  arduboy.print(msg);
-
-  arduboy.setCursor(48, yPos+33);
-  arduboy.setTextColor(colorA);
-  arduboy.print(msg);
-}
-
 void win_screen(){
-  drawStage();
-  String msg = "Gentle Course Win!";
-  arduboy.setCursor(11, 15);
-  arduboy.setTextColor(colorB);
-  arduboy.print(msg);
 
-  arduboy.setCursor(11, 45);
+  drawStage();
+  arduboy.setCursor(11, 11);
+  arduboy.setTextColor(colorB);
+  arduboy.print("Gentle Course Win!");
+
+  arduboy.setCursor(11, 11+33);
   arduboy.setTextColor(colorA);
-  arduboy.print(msg);
+  arduboy.print("Gentle Course Win!");
 
   if (arduboy.justPressed(A_BUTTON) || arduboy.justPressed(DOWN_BUTTON) ||
     arduboy.justPressed(B_BUTTON) || arduboy.justPressed(UP_BUTTON))
@@ -442,12 +431,17 @@ void win_screen(){
 void lose_screen()
 {
   drawStage();
-  showMessage(death_message, 52, 11);
+  arduboy.setCursor(48, 11);
+  arduboy.setTextColor(colorB);
+  arduboy.print(death_message);
+
+  arduboy.setCursor(48, 11+33);
+  arduboy.setTextColor(colorA);
+  arduboy.print(death_message);
 
   arduboy.setCursor(0, 0);
   arduboy.setTextColor(colorB);
   arduboy.print(score);
-
 
   if (arduboy.justPressed(A_BUTTON) || arduboy.justPressed(DOWN_BUTTON) ||
       arduboy.justPressed(B_BUTTON) || arduboy.justPressed(UP_BUTTON))
