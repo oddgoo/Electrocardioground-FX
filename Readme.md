@@ -22,4 +22,4 @@ The built hex file can also be run using "Ardens", an arduboy emulator.
 ✅ Add menu state
 ✅ Tune Mayhem course
 ✅ Nicer Title and Instructions screens
-- Beeps and Boops
+✅ Beeps and Boops

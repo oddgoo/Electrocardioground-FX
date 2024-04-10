@@ -30,6 +30,7 @@ const int GENTLE_TARGET_SCORE = 200; // Maximum number of beats
 
 int death_mode = 0; //0=crash, 1=depletion
 
+byte helperVarTest = 99; //0x63 0b1100011
 byte gameMode = GENTLE;
 
 int titleOption = 0;
@@ -92,7 +93,9 @@ const uint8_t PROGMEM infoB[] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x08, 0x0e, 0x08, 0x07, 0x00, 0x07, 0x0e, 0x0f, 0x0e, 0x07, 0x00, 0x02, 0x01, 0x00, 0x00, 0x00, 0x07, 0x08, 0x0a, 0x0d, 0x07, 0x00, 0x07, 0x0e, 0x0d, 0x0e, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3e, 0x28, 0x38, 0x00, 0x58, 0x20, 0x18, 0x00, 0x00, 0x00, 0x38, 0x28, 0x38, 0x00, 0x38, 0x28, 0x3e, 0x00, 0x38, 0x28, 0x3e, 0x00, 0xb8, 0xa8, 0xf8, 0x00, 0x38, 0x28, 0x38, 0x00, 0x38, 0x28, 0x38, 0x00, 0x00, 
 };
 
-
+const uint16_t winSong[] PROGMEM = {
+  320,150, 400,150, 320,150, 400,150, 630,350,
+  TONES_END };
 
 // columns
 class Column
@@ -114,7 +117,7 @@ public:
     if (buttonPressed) {
 
       if(this->state == false){
-         sound.tone(800, 50);
+         sound.tone(600, 50);
       }
 
       this->state = true;
@@ -126,7 +129,7 @@ public:
         this->state = false;
      
         if (checkSquash(this->x, this->h)) {
-            sound.tone(150, 80, 200, 80);
+            sound.tone(200, 80, 250, 80);
         } else {
             sound.tone(200, 50);
         }
@@ -165,8 +168,10 @@ int numBeats = 0;
 Column columns[2];
 
 // game vars
+byte helperVarTestB = 127; //0x7F 0b1111111
 int score = 0;
 int speed = 0;
+bool beatStomped = false;
 word t = 0;
 
 int gentleHighScore = 0;
@@ -178,6 +183,7 @@ void initialiseGlobals()
   beatGap = initialBeatGap;
   score = 0;
   t = 0;
+  beatStomped = false;
   columns[0] = Column((WIDTH / 2) - column_width*2, TOP);
   columns[1] = Column((WIDTH / 2) + column_width*2, BOTTOM);
 }
@@ -228,10 +234,7 @@ void loop()
 
 void title_screen()
 {
-
-
   int maxOptions = 3;
-
 
   //Choose Mode
   if(arduboy.justPressed(RIGHT_BUTTON)){
@@ -261,9 +264,9 @@ void title_screen()
 
   } else if(titleOption == 1){
     gameMode = MAYHEM;
-    arduboy.setCursor(23,44);
+    arduboy.setCursor(19,44);
     arduboy.setTextColor(colorA);
-    arduboy.print("<   MAYHEM   >");
+    arduboy.print("<   ENDLESS   >");
   } else if(titleOption == 2){
     if(colorA == BLACK)
       arduboy.drawBitmap(0, 0, infoA, 128, 64, WHITE);  
@@ -333,6 +336,7 @@ bool checkSquash(byte cx, int h)
     {
       beats[i].h = -beats[i].h; // Swap the half (TOP becomes BOTTOM, BOTTOM becomes TOP)
       squashed = true;
+      beatStomped = true; //global variable helper for achievement
     }
   }
   return squashed;
@@ -351,6 +355,7 @@ void lose()
 }
 
 void win(){
+  sound.tones(winSong);
     for (int i = 0; i < MAX_BEATS; i++) {
     beats[i] = Beat();
   }
